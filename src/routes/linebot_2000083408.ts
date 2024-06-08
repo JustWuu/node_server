@@ -1,52 +1,17 @@
 import Router, { Application, Request, Response } from "express"
 import {
-  ClientConfig,
-  MessageAPIResponseBase,
-  messagingApi,
   middleware,
   MiddlewareConfig,
   webhook,
   HTTPFetchError,
 } from "@line/bot-sdk"
 
-const linebotRouter: Application = Router()
+import { eventHandler } from "@/controllers/index.js"
 
-const clientConfig: ClientConfig = {
-  channelAccessToken: process.env.CHANNEL_2000083408_ACCESS_TOKEN || "",
-}
+const linebotRouter: Application = Router()
 
 const middlewareConfig: MiddlewareConfig = {
   channelSecret: process.env.CHANNEL_2000083408_SECRET || "",
-}
-
-const client = new messagingApi.MessagingApiClient(clientConfig)
-
-const textEventHandler = async (
-  event: webhook.Event
-): Promise<MessageAPIResponseBase | undefined> => {
-  // Process all variables here.
-
-  // Check if for a text message
-  if (event.type !== "message" || event.message.type !== "text") {
-    return
-  }
-
-  // Process all message related variables here.
-
-  // Check if message is repliable
-  if (!event.replyToken) return
-
-  // Create a new message.
-  // Reply to the user.
-  await client.replyMessage({
-    replyToken: event.replyToken,
-    messages: [
-      {
-        type: "text",
-        text: event.message.text,
-      },
-    ],
-  })
 }
 
 /* GET linebot listing. */
@@ -61,7 +26,7 @@ linebotRouter.post(
     const results = await Promise.all(
       events.map(async (event: webhook.Event) => {
         try {
-          await textEventHandler(event)
+          await eventHandler("2000083408", event)
         } catch (err: unknown) {
           if (err instanceof HTTPFetchError) {
             console.error(err.status)
