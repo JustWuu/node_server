@@ -4,12 +4,34 @@ import {
   messagingApi,
   webhook,
 } from "@line/bot-sdk"
-import { ChannelConfig } from "@/types.js"
+import { ChannelData } from "@/types.js"
 import {
   setDocument,
   getDocument,
   updateDocument,
 } from "@/utils/useFirebase.js"
+import { chatGpt } from "@/utils/useOpenai.js"
+
+const replyMessage = (
+  channelId: string,
+  replyToken: string,
+  message: string
+) => {
+  // set channelAccessToken
+  const clientConfig: ClientConfig = {
+    channelAccessToken: process.env[`CHANNEL_${channelId}_ACCESS_TOKEN`] || "",
+  }
+  const client = new messagingApi.MessagingApiClient(clientConfig)
+  return client.replyMessage({
+    replyToken: replyToken,
+    messages: [
+      {
+        type: "text",
+        text: message,
+      },
+    ],
+  })
+}
 
 const eventHandler = async (
   channelId: string,
@@ -17,18 +39,12 @@ const eventHandler = async (
 ): Promise<
   messagingApi.ReplyMessageResponse | MessageAPIResponseBase | undefined
 > => {
-  // set channelAccessToken
-  const clientConfig: ClientConfig = {
-    channelAccessToken: process.env[`CHANNEL_${channelId}_ACCESS_TOKEN`] || "",
-  }
-  const client = new messagingApi.MessagingApiClient(clientConfig)
-
   // Process all variables here.
-  const channelConfig: ChannelConfig = await getDocument("linebot", channelId)
+  const channelData: ChannelData = await getDocument("linebot", channelId)
 
-  // if not channelConfig
-  if (!channelConfig) {
-    const config: ChannelConfig = {
+  // if not channelData
+  if (!channelData) {
+    const config: ChannelData = {
       channelId: channelId,
       mod: "[Product]",
       systemContent:
@@ -51,54 +67,38 @@ const eventHandler = async (
     switch (event.message.text) {
       case "Debug Start": {
         await updateDocument("linebot", channelId, { mod: "[Debug]" })
-        return client.replyMessage({
-          replyToken: event.replyToken,
-          messages: [
-            {
-              type: "text",
-              text: "UID Correct！[Debug Start]",
-            },
-          ],
-        })
+        return replyMessage(
+          channelId,
+          event.replyToken,
+          "UID Correct！[Debug Start]"
+        )
       }
       case "Debug End": {
         await updateDocument("linebot", channelId, { mod: "[Product]" })
-        return client.replyMessage({
-          replyToken: event.replyToken,
-          messages: [
-            {
-              type: "text",
-              text: "UID Correct！[Debug End]",
-            },
-          ],
-        })
+        return replyMessage(
+          channelId,
+          event.replyToken,
+          "UID Correct！[Debug End]"
+        )
       }
       case "System Set": {
-        if (channelConfig.mod == "[Debug]") {
+        if (channelData.mod == "[Debug]") {
           await updateDocument("linebot", channelId, { mod: "[System]" })
-          return client.replyMessage({
-            replyToken: event.replyToken,
-            messages: [
-              {
-                type: "text",
-                text: "UID Correct！[System Set]",
-              },
-            ],
-          })
+          return replyMessage(
+            channelId,
+            event.replyToken,
+            "UID Correct！[System Set]"
+          )
         } else {
           break
         }
       }
       case "Console Config": {
-        return client.replyMessage({
-          replyToken: event.replyToken,
-          messages: [
-            {
-              type: "text",
-              text: `${channelConfig}`,
-            },
-          ],
-        })
+        return replyMessage(
+          channelId,
+          event.replyToken,
+          JSON.stringify(channelData)
+        )
       }
       default: {
         break
@@ -107,26 +107,26 @@ const eventHandler = async (
   }
 
   // set system
-  if (channelConfig.mod == "[System]") {
+  if (channelData.mod == "[System]") {
     await updateDocument("linebot", channelId, {
       mod: "[Debug]",
       systemContent: event.message.text,
     })
-    return client.replyMessage({
-      replyToken: event.replyToken,
-      messages: [
-        {
-          type: "text",
-          text: `[System Set] End, Now [Debug]`,
-        },
-      ],
-    })
+    return replyMessage(
+      channelId,
+      event.replyToken,
+      `[System Set] End, Now [Debug]`
+    )
   }
 
   // if Debug mod to end
-  if (channelConfig.mod == "[Debug]") {
+  if (channelData.mod == "[Debug]") {
     return
   }
+
+  // start chat
+  const chatCompletion = await chatGpt(channelData, event.message.text)
+  return replyMessage(channelId, event.replyToken, chatCompletion)
 }
 
 export { eventHandler }
