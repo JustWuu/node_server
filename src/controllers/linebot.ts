@@ -117,7 +117,7 @@ const eventHandler = async (
       messages: [
         {
           type: "text",
-          text: `${channelConfig}`,
+          text: `[System Set] End, Now [Debug]`,
         },
       ],
     })
