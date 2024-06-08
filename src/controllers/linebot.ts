@@ -12,6 +12,22 @@ import {
 } from "@/utils/useFirebase.js"
 import { chatGpt } from "@/utils/useOpenai.js"
 
+const getDisplayName = async (channelId: string, source: any) => {
+  // set channelAccessToken
+  const clientConfig: ClientConfig = {
+    channelAccessToken: process.env[`CHANNEL_${channelId}_ACCESS_TOKEN`] || "",
+  }
+  const client = new messagingApi.MessagingApiClient(clientConfig)
+
+  try {
+    const profile = await client.getProfile(source.userId)
+    return profile.displayName
+  } catch (error: any) {
+    console.log("error:", error)
+    return ""
+  }
+}
+
 const replyMessage = (
   channelId: string,
   replyToken: string,
@@ -124,8 +140,14 @@ const eventHandler = async (
     return
   }
 
+  // get displayName
+  const displayName = await getDisplayName(channelId, event.source)
+
   // start chat
-  const chatCompletion = await chatGpt(channelData, event.message.text)
+  const chatCompletion = await chatGpt(
+    channelData,
+    `${displayName !== "" ? `我是${displayName}，` : ""}${event.message.text}`
+  )
   return replyMessage(channelId, event.replyToken, chatCompletion)
 }
 
