@@ -48,11 +48,8 @@ export async function getCollection(col: string): Promise<any> {
 
     return array
   } catch (error: any) {
-    if (error === "no-such-document") {
-      throw errorMessage[`${error}`] + `(${col})`
-    }
-    const errorCode = error.code
-    throw errorMessage[`${errorCode}`] + `(${col})`
+    console.log("error:", error)
+    return []
   }
 }
 /**
@@ -61,17 +58,15 @@ export async function getCollection(col: string): Promise<any> {
 export async function getDocument(col: string, document: string): Promise<any> {
   try {
     const docSnap = await getDoc(doc(db, col, document))
+
     if (docSnap.exists()) {
       return docSnap.data()
     } else {
       throw "no-such-document"
     }
   } catch (error: any) {
-    if (error === "no-such-document") {
-      throw errorMessage[`${error}`] + `(${col}/${document})`
-    }
-    const errorCode = error.code
-    throw errorMessage[`${errorCode}`] + `(${col}/${document})`
+    console.log("error:", error)
+    return undefined
   }
 }
 /**

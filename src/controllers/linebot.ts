@@ -47,7 +47,6 @@ const eventHandler = async (
   if (!event.replyToken) return
 
   // Process all message related variables here.
-  // "Uafee7075f6082ab29a1b8fddb52a6fde"
   if (event.source!.userId == process.env.ADMIN_UID) {
     switch (event.message.text) {
       case "Debug Start": {
