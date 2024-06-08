@@ -35,6 +35,7 @@ const eventHandler = async (
         "你是剛初始化的機器人，沒有名稱沒有代號，你正等待啟動者為你取名，你尚未設定任何任務目標",
     }
     await setDocument("linebot", channelId, config)
+    return
   }
 
   // Check if for a text message
