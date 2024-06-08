@@ -1,7 +1,7 @@
 import express, { Application, Request, Response, NextFunction } from "express"
 import "dotenv/config"
 import { default as indexRouter } from "@/routes/index.js"
-import { default as linebotRouter } from "./routes/linebot.js"
+import { default as linebot2000083408Router } from "./routes/linebot_2000083408.js"
 // https://github.com/microsoft/TypeScript/issues/27481
 // 提到.ts檔卻要使用.js解尾的問題，是很長期的issues了
 
@@ -9,7 +9,7 @@ const app: Application = express()
 const PORT = process.env.PORT || 3000
 
 app.use("/", indexRouter)
-app.use("/linebot", linebotRouter)
+app.use("/linebot/2000083408", linebot2000083408Router)
 
 // error handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

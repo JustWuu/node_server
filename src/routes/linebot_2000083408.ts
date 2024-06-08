@@ -12,11 +12,11 @@ import {
 const linebotRouter: Application = Router()
 
 const clientConfig: ClientConfig = {
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN || "",
+  channelAccessToken: process.env.CHANNEL_2000083408_ACCESS_TOKEN || "",
 }
 
 const middlewareConfig: MiddlewareConfig = {
-  channelSecret: process.env.CHANNEL_SECRET || "",
+  channelSecret: process.env.CHANNEL_2000083408_SECRET || "",
 }
 
 const client = new messagingApi.MessagingApiClient(clientConfig)
