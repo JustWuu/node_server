@@ -105,7 +105,6 @@ export async function setDocument(
  */
 export async function addDocument(col: string, params: object): Promise<any> {
   try {
-    const memberlogID = generateRandomString(10)
     const randomId = generateRandomString(6)
     await runTransaction(db, async (transaction) => {
       transaction.set(doc(db, col, randomId), { ...params, id: randomId })
@@ -128,7 +127,6 @@ export async function updateDocument(
   params: object
 ): Promise<any> {
   try {
-    const memberlogID = generateRandomString(10)
     await runTransaction(db, async (transaction) => {
       transaction.update(doc(db, col, document), {
         ...params,

@@ -9,5 +9,5 @@ export interface ChannelData {
   channelId: string
   mod: string
   systemContent: string
-  messageHistory?: MessageHistory
+  messageHistory: MessageHistory
 }

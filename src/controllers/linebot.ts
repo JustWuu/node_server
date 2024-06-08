@@ -65,6 +65,12 @@ const eventHandler = async (
       mod: "[Product]",
       systemContent:
         "你是剛初始化的機器人，沒有名稱沒有代號，你正等待啟動者為你取名，你尚未設定任何任務目標",
+      messageHistory: {
+        oldBeforeMessage: "",
+        oldBeforeReply: "",
+        beforeMessage: "",
+        beforeReply: "",
+      },
     }
     await setDocument("linebot", channelId, config)
     return
@@ -136,7 +142,7 @@ const eventHandler = async (
   }
 
   // if Debug mod to end
-  if (channelData.mod == "[Debug]") {
+  if (event.message.text.indexOf("Vivy") < 0 || channelData.mod == "[Debug]") {
     return
   }
 
