@@ -9,7 +9,7 @@ const openai = new OpenAI({
 export async function chatGpt(
   channelData: ChannelData,
   message: string
-): Promise<any> {
+): Promise<string> {
   try {
     const chatCompletion = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -22,9 +22,9 @@ export async function chatGpt(
       ],
     })
 
-    return chatCompletion.choices[0]?.message
+    return chatCompletion.choices[0]?.message.content?.trim() || "undefined"
   } catch (error: any) {
     console.log("error:", error)
-    return undefined
+    return "undefined"
   }
 }
