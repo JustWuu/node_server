@@ -119,7 +119,11 @@ const eventHandler = async (
         return replyMessage(
           channelId,
           event.replyToken,
-          JSON.stringify(channelData)
+          JSON.stringify({
+            channelId: channelData.channelId,
+            mod: channelData.mod,
+            systemContent: channelData.systemContent,
+          })
         )
       }
       default: {
