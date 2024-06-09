@@ -1,3 +1,14 @@
+import { tz } from "moment-timezone"
+
+/**
+ * 取得當前時區之時間
+ */
+export function getToday() {
+  const timeZone = process.env.TIME_ZONE!
+  const date = tz(new Date(), timeZone).format("YYYY-MM-DD HH:mm:ss")
+  return date
+}
+
 //把傳入的毫秒轉成年月日時
 export function convertDate(date: any) {
   const d = new Date(date)
