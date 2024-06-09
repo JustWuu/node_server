@@ -11,6 +11,7 @@ import {
   updateDocument,
 } from "@/utils/useFirebase.js"
 import { chatGpt } from "@/utils/useOpenai.js"
+import { textToSpeech } from "@/utils/useSpeech.js"
 
 const getDisplayName = async (channelId: string, source: any) => {
   // set channelAccessToken
@@ -26,6 +27,24 @@ const getDisplayName = async (channelId: string, source: any) => {
     console.log("error:", error)
     return ""
   }
+}
+
+const replyAudio = (channelId: string, replyToken: string, audio: any) => {
+  // set channelAccessToken
+  const clientConfig: ClientConfig = {
+    channelAccessToken: process.env[`CHANNEL_${channelId}_ACCESS_TOKEN`] || "",
+  }
+  const client = new messagingApi.MessagingApiClient(clientConfig)
+  return client.replyMessage({
+    replyToken: replyToken,
+    messages: [
+      {
+        type: "audio",
+        originalContentUrl: audio,
+        duration: 60000,
+      },
+    ],
+  })
 }
 
 const replyMessage = (
@@ -158,7 +177,12 @@ const eventHandler = async (
     channelData,
     `${displayName !== "" ? `我是${displayName}，` : ""}${event.message.text}`
   )
-  return replyMessage(channelId, event.replyToken, chatCompletion)
+
+  // start speech
+  const speech = await textToSpeech("哈囉")
+  return replyAudio(channelId, event.replyToken, speech)
+
+  // return replyMessage(channelId, event.replyToken, chatCompletion)
 }
 
 export { eventHandler }
