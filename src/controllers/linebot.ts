@@ -179,8 +179,8 @@ const eventHandler = async (
   )
 
   // start speech
-  const speech = await textToSpeech("哈囉")
-  return replyAudio(channelId, event.replyToken, speech)
+  const audioStream = await textToSpeech("哈囉")
+  return replyAudio(channelId, event.replyToken, audioStream)
 
   // return replyMessage(channelId, event.replyToken, chatCompletion)
 }
