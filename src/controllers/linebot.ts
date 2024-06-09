@@ -39,7 +39,7 @@ const replyAudio = (channelId: string, replyToken: string, message: string) => {
     messages: [
       {
         type: "audio",
-        originalContentUrl: `${process.env.SPEECH_URL}/${message}`,
+        originalContentUrl: `${process.env.SPEECH_URL}/${encodeURI(message)}`,
         duration: 60000,
       },
     ],
