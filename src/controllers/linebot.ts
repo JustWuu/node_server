@@ -11,7 +11,6 @@ import {
   updateDocument,
 } from "@/utils/useFirebase.js"
 import { chatGpt } from "@/utils/useOpenai.js"
-import { textToSpeech } from "@/utils/useSpeech.js"
 
 const getDisplayName = async (channelId: string, source: any) => {
   // set channelAccessToken
@@ -29,7 +28,7 @@ const getDisplayName = async (channelId: string, source: any) => {
   }
 }
 
-const replyAudio = (channelId: string, replyToken: string, audio: any) => {
+const replyAudio = (channelId: string, replyToken: string, message: string) => {
   // set channelAccessToken
   const clientConfig: ClientConfig = {
     channelAccessToken: process.env[`CHANNEL_${channelId}_ACCESS_TOKEN`] || "",
@@ -40,18 +39,14 @@ const replyAudio = (channelId: string, replyToken: string, audio: any) => {
     messages: [
       {
         type: "audio",
-        originalContentUrl: audio,
+        originalContentUrl: `${process.env.SPEECH_URL}/${message}`,
         duration: 60000,
       },
     ],
   })
 }
 
-const replyMessage = (
-  channelId: string,
-  replyToken: string,
-  message: string
-) => {
+const replyText = (channelId: string, replyToken: string, message: string) => {
   // set channelAccessToken
   const clientConfig: ClientConfig = {
     channelAccessToken: process.env[`CHANNEL_${channelId}_ACCESS_TOKEN`] || "",
@@ -82,6 +77,7 @@ const eventHandler = async (
     const config: ChannelData = {
       channelId: channelId,
       mod: "[Product]",
+      messageMod: "text",
       systemContent:
         "你是剛初始化的機器人，沒有名稱沒有代號，你正等待啟動者為你取名，你尚未設定任何任務目標",
       messageHistory: {
@@ -108,34 +104,46 @@ const eventHandler = async (
     switch (event.message.text) {
       case "Debug Start": {
         await updateDocument("linebot", channelId, { mod: "[Debug]" })
-        return replyMessage(
+        return replyText(
           channelId,
           event.replyToken,
-          "UID Correct！[Debug Start]"
+          "UID Correct! Now [Debug]"
         )
       }
       case "Debug End": {
         await updateDocument("linebot", channelId, { mod: "[Product]" })
-        return replyMessage(
+        return replyText(
           channelId,
           event.replyToken,
-          "UID Correct！[Debug End]"
+          "UID Correct! Now [Product]"
         )
       }
       case "System Set": {
         if (channelData.mod == "[Debug]") {
           await updateDocument("linebot", channelId, { mod: "[System]" })
-          return replyMessage(
+          return replyText(
             channelId,
             event.replyToken,
-            "UID Correct！[System Set]"
+            "UID Correct! Now [System]"
+          )
+        } else {
+          break
+        }
+      }
+      case "Message Set": {
+        if (channelData.mod == "[Debug]") {
+          await updateDocument("linebot", channelId, { mod: "[Message]" })
+          return replyText(
+            channelId,
+            event.replyToken,
+            "UID Correct! Now [Message]"
           )
         } else {
           break
         }
       }
       case "Console Config": {
-        return replyMessage(
+        return replyText(
           channelId,
           event.replyToken,
           JSON.stringify({
@@ -157,10 +165,23 @@ const eventHandler = async (
       mod: "[Debug]",
       systemContent: event.message.text,
     })
-    return replyMessage(
+    return replyText(
       channelId,
       event.replyToken,
       `[System Set] End, Now [Debug]`
+    )
+  }
+
+  // set message
+  if (channelData.mod == "[Message]") {
+    await updateDocument("linebot", channelId, {
+      mod: "[Debug]",
+      messageMod: event.message.text,
+    })
+    return replyText(
+      channelId,
+      event.replyToken,
+      `[Message Set] End, Now [Debug]`
     )
   }
 
@@ -179,10 +200,11 @@ const eventHandler = async (
   )
 
   // start speech
-  const audioStream = await textToSpeech("哈囉")
-  return replyAudio(channelId, event.replyToken, audioStream)
-
-  // return replyMessage(channelId, event.replyToken, chatCompletion)
+  if (channelData.messageMod == "text") {
+    return replyText(channelId, event.replyToken, chatCompletion)
+  } else if (channelData.messageMod == "audio") {
+    return replyAudio(channelId, event.replyToken, chatCompletion)
+  }
 }
 
 export { eventHandler }
