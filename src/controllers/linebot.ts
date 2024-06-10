@@ -28,10 +28,15 @@ const getDisplayName = async (channelId: string, source: any) => {
   }
 }
 
-const replyAudio = (channelId: string, replyToken: string, message: string) => {
+const replyAudio = (
+  channelData: ChannelData,
+  replyToken: string,
+  message: string
+) => {
   // set channelAccessToken
   const clientConfig: ClientConfig = {
-    channelAccessToken: process.env[`CHANNEL_${channelId}_ACCESS_TOKEN`] || "",
+    channelAccessToken:
+      process.env[`CHANNEL_${channelData.channelId}_ACCESS_TOKEN`] || "",
   }
   const client = new messagingApi.MessagingApiClient(clientConfig)
   return client.replyMessage({
@@ -39,7 +44,7 @@ const replyAudio = (channelId: string, replyToken: string, message: string) => {
     messages: [
       {
         type: "audio",
-        originalContentUrl: `${process.env.SPEECH_URL}/${encodeURI(message)}`,
+        originalContentUrl: `${process.env.SPEECH_URL}/${encodeURI(channelData.voice)}/${encodeURI(message)}`,
         duration: 1000,
       },
     ],
@@ -78,6 +83,7 @@ const eventHandler = async (
       channelId: channelId,
       mod: "[Product]",
       messageMod: "text",
+      voice: "zh-CN-XiaoxiaoNeural",
       systemContent:
         "你是剛初始化的機器人，沒有名稱沒有代號，你正等待啟動者為你取名，你尚未設定任何任務目標",
       messageHistory: {
@@ -149,6 +155,8 @@ const eventHandler = async (
           JSON.stringify({
             channelId: channelData.channelId,
             mod: channelData.mod,
+            messageMod: channelData.messageMod,
+            voice: channelData.voice,
             systemContent: channelData.systemContent,
           })
         )
@@ -203,7 +211,7 @@ const eventHandler = async (
   if (channelData.messageMod == "text") {
     return replyText(channelId, event.replyToken, chatCompletion)
   } else if (channelData.messageMod == "audio") {
-    return replyAudio(channelId, event.replyToken, chatCompletion)
+    return replyAudio(channelData, event.replyToken, chatCompletion)
   }
 }
 

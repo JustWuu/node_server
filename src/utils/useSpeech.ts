@@ -1,11 +1,14 @@
 import * as sdk from "microsoft-cognitiveservices-speech-sdk"
 import { PassThrough } from "stream"
+import { getDocument } from "@/utils/useFirebase.js"
+
+const channelData = await getDocument("linebot", "")
 
 // replace with your own subscription key,
 // service region (e.g., "westus"), and
 // the name of the file you save the synthesized audio.
-var subscriptionKey = process.env.SUBSCRIPTION_KEY!
-var serviceRegion = process.env.SERVICEREGION!
+const subscriptionKey = process.env.SUBSCRIPTION_KEY!
+const serviceRegion = process.env.SERVICEREGION!
 
 // now create the audio-config pointing to our stream and
 // the speech config specifying the language.
@@ -14,12 +17,12 @@ const speechConfig = sdk.SpeechConfig.fromSubscription(
   serviceRegion
 )
 speechConfig.speechSynthesisOutputFormat = 5
-speechConfig.speechSynthesisVoiceName = "zh-CN-XiaoxiaoNeural"
 
 // create the speech synthesizer.
-const synthesizer = new sdk.SpeechSynthesizer(speechConfig)
 
-export async function textToSpeech(text: string): Promise<any> {
+export async function textToSpeech(voice: string, text: string): Promise<any> {
+  speechConfig.speechSynthesisVoiceName = voice
+  const synthesizer = new sdk.SpeechSynthesizer(speechConfig)
   return new Promise((resolve, reject) => {
     synthesizer.speakTextAsync(
       text,
