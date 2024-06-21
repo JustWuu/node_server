@@ -142,7 +142,7 @@ const eventHandler = async (
           return replyText(
             channelId,
             event.replyToken,
-            "UID Correct! Now [Message]"
+            "UID Correct! Now [Message], You Can Set audio or text"
           )
         } else {
           break
