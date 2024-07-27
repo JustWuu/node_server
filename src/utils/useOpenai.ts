@@ -1,5 +1,5 @@
 import OpenAI from "openai"
-import { ChannelData } from "@/types.js"
+import { ChannelData, ReplyMessage } from "@/types.js"
 import {
   getLinebotMessageCollection,
   addDocument,
@@ -13,7 +13,7 @@ const openai = new OpenAI({
 export async function chatGpt(
   channelData: ChannelData,
   message: string
-): Promise<string> {
+): Promise<ReplyMessage> {
   const time = date()
 
   const channelMessages = await getLinebotMessageCollection(
@@ -47,6 +47,9 @@ export async function chatGpt(
 
     const replyMessage =
       chatCompletion.choices[0]?.message.content?.trim() || "undefined"
+    const replyMessageObject: ReplyMessage =
+      JSON.parse(chatCompletion.choices[0]?.message.content?.trim()!) ||
+      "undefined"
 
     await addDocument(`linebot/${channelData.channelId}/messages`, {
       message: message,
@@ -54,7 +57,35 @@ export async function chatGpt(
       createdAt: getTime(),
     })
 
-    return replyMessage
+    return replyMessageObject
+  } catch (error: any) {
+    console.log("error:", error)
+    return { type: "text", message: "undefined" }
+  }
+}
+
+export async function dallE(
+  channelData: ChannelData,
+  message: string
+): Promise<string> {
+  try {
+    const response = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: message,
+      size: "1024x1024",
+      quality: "standard",
+      n: 1,
+    })
+
+    const image_url = response.data[0]!.url
+
+    await addDocument(`linebot/${channelData.channelId}/images`, {
+      message: message,
+      reply: image_url,
+      createdAt: getTime(),
+    })
+
+    return image_url!
   } catch (error: any) {
     console.log("error:", error)
     return "undefined"
