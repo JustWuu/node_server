@@ -89,12 +89,7 @@ const eventHandler = async (
       voice: "zh-CN-XiaoxiaoNeural",
       systemContent:
         "你是剛初始化的機器人，名為Vivy的機器人，你尚未設定任何任務目標",
-      messageHistory: {
-        oldBeforeMessage: "",
-        oldBeforeReply: "",
-        beforeMessage: "",
-        beforeReply: "",
-      },
+      image: true,
     }
     await setDocument("linebot", channelId, config)
     return
@@ -197,7 +192,16 @@ const eventHandler = async (
   } else if (chatCompletion.type == "audio") {
     return reply(channelData, event.replyToken, chatCompletion.message, "audio")
   } else if (chatCompletion.type == "image") {
-    return reply(channelData, event.replyToken, chatCompletion.message, "image")
+    if (channelData.image) {
+      return reply(
+        channelData,
+        event.replyToken,
+        chatCompletion.message,
+        "image"
+      )
+    } else {
+      return reply(channelData, event.replyToken, "圖片生成遭關閉了！")
+    }
   }
 }
 

@@ -1,10 +1,3 @@
-interface MessageHistory {
-  oldBeforeMessage: string
-  oldBeforeReply: string
-  beforeMessage: string
-  beforeReply: string
-}
-
 export interface ChannelData {
   name: string
   memory: number
@@ -12,7 +5,7 @@ export interface ChannelData {
   mod: string
   voice: string
   systemContent: string
-  messageHistory: MessageHistory
+  image: boolean
 }
 
 export interface ReplyMessage {
