@@ -10,7 +10,6 @@ export interface ChannelData {
   memory: number
   channelId: string
   mod: string
-  messageMod: string
   voice: string
   systemContent: string
   messageHistory: MessageHistory

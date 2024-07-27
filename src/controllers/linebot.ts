@@ -86,7 +86,6 @@ const eventHandler = async (
       memory: 3,
       channelId: channelId,
       mod: "[Product]",
-      messageMod: "text",
       voice: "zh-CN-XiaoxiaoNeural",
       systemContent:
         "你是剛初始化的機器人，名為Vivy的機器人，你尚未設定任何任務目標",
@@ -155,7 +154,6 @@ const eventHandler = async (
           JSON.stringify({
             channelId: channelData.channelId,
             mod: channelData.mod,
-            messageMod: channelData.messageMod,
             voice: channelData.voice,
             systemContent: channelData.systemContent,
           })
@@ -174,19 +172,6 @@ const eventHandler = async (
       systemContent: event.message.text,
     })
     return reply(channelData, event.replyToken, `[System Set] End, Now [Debug]`)
-  }
-
-  // set message
-  if (channelData.mod == "[Message]") {
-    await updateDocument("linebot", channelId, {
-      mod: "[Debug]",
-      messageMod: event.message.text,
-    })
-    return reply(
-      channelData,
-      event.replyToken,
-      `[Message Set] End, Now [Debug]`
-    )
   }
 
   // if Debug mod to end
