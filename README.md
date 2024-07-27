@@ -7,10 +7,17 @@
 
 - 串接OpenAI API的Line Bot，透過LineBot的Messaging API
 - 將接受的訊息傳遞至OpenAI並回傳得到的結果至客戶端的Line上
-- 任何訊息都會儲存至Firebase的Realtime Database中做為備存
+- 任何訊息都會儲存至Firebase的FireStore中做為備存
+- 由router收到Line Bot調用後，會再調用useOpenai.chatGpt
+- useOpenai運行後會回傳JSON格式其中type有以下，"text" | "audio" | "image"
+- text，文字，直接回傳給Line Bot
+- audio，聲音，調用TTS得到MP3檔後回傳至Line Bot
+- image，圖片，調用useOpenai.dallE得到圖片後回傳至Line Bot
 
-- 另外專案可串接Google搜尋API，透過關鍵字使用搜尋功能
-- 並將搜尋解果回傳至客戶端
+## 2. Microsoft Cognitiveservices Speech
+
+- 使用Microsoft提供azure-speech進行文字轉語音
+- speech/:voice/:text，路徑中帶入聲音及文字兩個參數會回傳MP3
 
 ### Node Typescript ESM
 

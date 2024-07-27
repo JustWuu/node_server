@@ -15,3 +15,8 @@ export interface ChannelData {
   systemContent: string
   messageHistory: MessageHistory
 }
+
+export interface ReplyMessage {
+  type: "text" | "audio" | "image"
+  message: string
+}

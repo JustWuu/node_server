@@ -10,7 +10,7 @@ import {
   getDocument,
   updateDocument,
 } from "@/utils/useFirebase.js"
-import { chatGpt } from "@/utils/useOpenai.js"
+import { chatGpt, dallE } from "@/utils/useOpenai.js"
 
 const getDisplayName = async (channelId: string, source: any) => {
   // set channelAccessToken
@@ -32,7 +32,7 @@ const reply = (
   channelData: ChannelData,
   replyToken: string,
   message: string,
-  type: "text" | "audio" = "text"
+  type: "text" | "audio" | "image" = "text"
 ) => {
   // set channelAccessToken
   const clientConfig: ClientConfig = {
@@ -53,6 +53,13 @@ const reply = (
         type: "audio",
         originalContentUrl: `${process.env.SPEECH_URL}/${encodeURI(channelData.voice)}/${encodeURI(message)}`,
         duration: 1000,
+      })
+      break
+    case "image":
+      messages.push({
+        type: "image",
+        originalContentUrl: dallE(channelData, message),
+        previewImageUrl: dallE(channelData, message),
       })
       break
   }
@@ -198,11 +205,13 @@ const eventHandler = async (
     `${displayName !== "" ? `我是${displayName}，` : ""}${event.message.text}`
   )
 
-  // start speech
-  if (channelData.messageMod == "text") {
-    return reply(channelData, event.replyToken, chatCompletion)
-  } else if (channelData.messageMod == "audio") {
-    return reply(channelData, event.replyToken, chatCompletion, "audio")
+  // start reply
+  if (chatCompletion.type == "text") {
+    return reply(channelData, event.replyToken, chatCompletion.message)
+  } else if (chatCompletion.type == "audio") {
+    return reply(channelData, event.replyToken, chatCompletion.message, "audio")
+  } else if (chatCompletion.type == "image") {
+    return reply(channelData, event.replyToken, chatCompletion.message, "image")
   }
 }
 
