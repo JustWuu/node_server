@@ -75,6 +75,7 @@ const eventHandler = async (
   if (!channelData) {
     const config: ChannelData = {
       name: "Vivy",
+      memory: 3,
       channelId: channelId,
       mod: "[Product]",
       messageMod: "text",

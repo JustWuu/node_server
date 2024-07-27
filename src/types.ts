@@ -7,6 +7,7 @@ interface MessageHistory {
 
 export interface ChannelData {
   name: string
+  memory: number
   channelId: string
   mod: string
   messageMod: string

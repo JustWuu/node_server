@@ -9,6 +9,8 @@ import {
   where,
   serverTimestamp,
   runTransaction,
+  orderBy,
+  limit,
 } from "firebase/firestore"
 import { generateRandomString } from "@/utils/useRandom.js"
 
@@ -35,7 +37,7 @@ const errorMessage = {
 export async function getCollection(col: string): Promise<any> {
   try {
     const querySnapshot = await getDocs(
-      query(collection(db, col), where("state", "==", "enable"))
+      query(collection(db, col), where("state", "!=", "delete"))
     )
     const array: object[] = []
     querySnapshot.forEach((doc) => {
@@ -161,5 +163,36 @@ export async function deleteDocument(
     console.log(errorCode)
 
     throw errorMessage[`${errorCode}`] + `(${col}/${document})`
+  }
+}
+
+/**
+ * 取得交談紀錄
+ */
+export async function getLinebotMessageCollection(
+  col: string,
+  limitNumber: number
+): Promise<any[]> {
+  try {
+    const querySnapshot = await getDocs(
+      query(
+        collection(db, col),
+        orderBy("createdAt", "desc"),
+        limit(limitNumber)
+      )
+    )
+    const array: object[] = []
+    querySnapshot.forEach((doc) => {
+      if (doc.data()) {
+        array.push(doc.data())
+      } else {
+        throw "no-such-document"
+      }
+    })
+
+    return array
+  } catch (error: any) {
+    console.log("error:", error)
+    return []
   }
 }
