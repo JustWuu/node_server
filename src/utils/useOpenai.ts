@@ -14,9 +14,16 @@ export async function chatGpt(
 ): Promise<string> {
   const time = getToday()
 
+  // 歷史紀錄調整
+  // channelData中會多一個記憶歷史數量，每1代表從資料庫取得幾筆資料
+  // 取得資料後其中的push資料進訊息陣列中
+  // message為一個role:user物件及reply則是role:assistant
+  // 最後在陣列中push新訊息，之後該陣列會解構丟入下方messages
+  // response_format: { type: "json_object" },
+
   try {
     const chatCompletion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: `${process.env.OPENAI_MODEL}`,
       messages: [
         {
           role: "system",
