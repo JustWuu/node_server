@@ -28,10 +28,11 @@ const getDisplayName = async (channelId: string, source: any) => {
   }
 }
 
-const replyAudio = (
+const reply = (
   channelData: ChannelData,
   replyToken: string,
-  message: string
+  message: string,
+  type: "text" | "audio" = "text"
 ) => {
   // set channelAccessToken
   const clientConfig: ClientConfig = {
@@ -39,6 +40,22 @@ const replyAudio = (
       process.env[`CHANNEL_${channelData.channelId}_ACCESS_TOKEN`] || "",
   }
   const client = new messagingApi.MessagingApiClient(clientConfig)
+  const messages: any[] = []
+  switch (type) {
+    case "text":
+      messages.push({
+        type: "text",
+        text: message,
+      })
+      break
+    case "audio":
+      messages.push({
+        type: "audio",
+        originalContentUrl: `${process.env.SPEECH_URL}/${encodeURI(channelData.voice)}/${encodeURI(message)}`,
+        duration: 1000,
+      })
+      break
+  }
   return client.replyMessage({
     replyToken: replyToken,
     messages: [
@@ -46,23 +63,6 @@ const replyAudio = (
         type: "audio",
         originalContentUrl: `${process.env.SPEECH_URL}/${encodeURI(channelData.voice)}/${encodeURI(message)}`,
         duration: 1000,
-      },
-    ],
-  })
-}
-
-const replyText = (channelId: string, replyToken: string, message: string) => {
-  // set channelAccessToken
-  const clientConfig: ClientConfig = {
-    channelAccessToken: process.env[`CHANNEL_${channelId}_ACCESS_TOKEN`] || "",
-  }
-  const client = new messagingApi.MessagingApiClient(clientConfig)
-  return client.replyMessage({
-    replyToken: replyToken,
-    messages: [
-      {
-        type: "text",
-        text: message,
       },
     ],
   })
@@ -110,16 +110,12 @@ const eventHandler = async (
     switch (event.message.text) {
       case "Debug Start": {
         await updateDocument("linebot", channelId, { mod: "[Debug]" })
-        return replyText(
-          channelId,
-          event.replyToken,
-          "UID Correct! Now [Debug]"
-        )
+        return reply(channelData, event.replyToken, "UID Correct! Now [Debug]")
       }
       case "Debug End": {
         await updateDocument("linebot", channelId, { mod: "[Product]" })
-        return replyText(
-          channelId,
+        return reply(
+          channelData,
           event.replyToken,
           "UID Correct! Now [Product]"
         )
@@ -127,8 +123,8 @@ const eventHandler = async (
       case "System Set": {
         if (channelData.mod == "[Debug]") {
           await updateDocument("linebot", channelId, { mod: "[System]" })
-          return replyText(
-            channelId,
+          return reply(
+            channelData,
             event.replyToken,
             "UID Correct! Now [System]"
           )
@@ -139,8 +135,8 @@ const eventHandler = async (
       case "Message Set": {
         if (channelData.mod == "[Debug]") {
           await updateDocument("linebot", channelId, { mod: "[Message]" })
-          return replyText(
-            channelId,
+          return reply(
+            channelData,
             event.replyToken,
             "UID Correct! Now [Message], You Can Set audio or text"
           )
@@ -149,8 +145,8 @@ const eventHandler = async (
         }
       }
       case "Console Config": {
-        return replyText(
-          channelId,
+        return reply(
+          channelData,
           event.replyToken,
           JSON.stringify({
             channelId: channelData.channelId,
@@ -173,11 +169,7 @@ const eventHandler = async (
       mod: "[Debug]",
       systemContent: event.message.text,
     })
-    return replyText(
-      channelId,
-      event.replyToken,
-      `[System Set] End, Now [Debug]`
-    )
+    return reply(channelData, event.replyToken, `[System Set] End, Now [Debug]`)
   }
 
   // set message
@@ -186,8 +178,8 @@ const eventHandler = async (
       mod: "[Debug]",
       messageMod: event.message.text,
     })
-    return replyText(
-      channelId,
+    return reply(
+      channelData,
       event.replyToken,
       `[Message Set] End, Now [Debug]`
     )
@@ -209,9 +201,9 @@ const eventHandler = async (
 
   // start speech
   if (channelData.messageMod == "text") {
-    return replyText(channelId, event.replyToken, chatCompletion)
+    return reply(channelData, event.replyToken, chatCompletion)
   } else if (channelData.messageMod == "audio") {
-    return replyAudio(channelData, event.replyToken, chatCompletion)
+    return reply(channelData, event.replyToken, chatCompletion, "audio")
   }
 }
 
