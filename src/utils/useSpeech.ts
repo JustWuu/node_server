@@ -1,8 +1,5 @@
 import * as sdk from "microsoft-cognitiveservices-speech-sdk"
 import { PassThrough } from "stream"
-import { getDocument } from "@/utils/useFirebase.js"
-
-const channelData = await getDocument("linebot", "")
 
 // replace with your own subscription key,
 // service region (e.g., "westus"), and
