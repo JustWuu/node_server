@@ -58,13 +58,7 @@ const reply = (
   }
   return client.replyMessage({
     replyToken: replyToken,
-    messages: [
-      {
-        type: "audio",
-        originalContentUrl: `${process.env.SPEECH_URL}/${encodeURI(channelData.voice)}/${encodeURI(message)}`,
-        duration: 1000,
-      },
-    ],
+    messages: messages,
   })
 }
 
