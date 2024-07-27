@@ -70,9 +70,16 @@ export async function dallE(
 ): Promise<string> {
   try {
     const response = await openai.images.generate({
-      model: "dall-e-3",
+      model: `${process.env.OPENAI_IMAGES_MODEL}`,
       prompt: message,
-      size: "1024x1024",
+      size: `${process.env.OPENAI_IMAGES_SIZE}` as
+        | "256x256"
+        | "512x512"
+        | "1024x1024"
+        | "1792x1024"
+        | "1024x1792"
+        | null
+        | undefined,
       quality: "standard",
       n: 1,
     })
