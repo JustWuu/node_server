@@ -28,7 +28,7 @@ const getDisplayName = async (channelId: string, source: any) => {
   }
 }
 
-const reply = (
+const reply = async (
   channelData: ChannelData,
   replyToken: string,
   message: string,
@@ -56,10 +56,11 @@ const reply = (
       })
       break
     case "image":
+      const url = await dallE(channelData, message)
       messages.push({
         type: "image",
-        originalContentUrl: dallE(channelData, message),
-        previewImageUrl: dallE(channelData, message),
+        originalContentUrl: url,
+        previewImageUrl: url,
       })
       break
   }
