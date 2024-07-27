@@ -74,12 +74,13 @@ const eventHandler = async (
   // if not channelData
   if (!channelData) {
     const config: ChannelData = {
+      name: "Vivy",
       channelId: channelId,
       mod: "[Product]",
       messageMod: "text",
       voice: "zh-CN-XiaoxiaoNeural",
       systemContent:
-        "你是剛初始化的機器人，沒有名稱沒有代號，你正等待啟動者為你取名，你尚未設定任何任務目標",
+        "你是剛初始化的機器人，名為Vivy的機器人，你尚未設定任何任務目標",
       messageHistory: {
         oldBeforeMessage: "",
         oldBeforeReply: "",
@@ -180,7 +181,10 @@ const eventHandler = async (
   }
 
   // if Debug mod to end
-  if (event.message.text.indexOf("Vivy") < 0 || channelData.mod == "[Debug]") {
+  if (
+    event.message.text.indexOf(channelData.name) < 0 ||
+    channelData.mod == "[Debug]"
+  ) {
     return
   }
 
