@@ -33,7 +33,7 @@ export async function chatGpt(
   })
   try {
     const chatCompletion = await openai.chat.completions.create({
-      model: `${process.env.OPENAI_MODEL}`,
+      model: channelData.chatModel,
       response_format: { type: "json_object" },
       messages: [
         {
@@ -70,17 +70,10 @@ export async function dallE(
 ): Promise<string> {
   try {
     const response = await openai.images.generate({
-      model: `${process.env.OPENAI_IMAGES_MODEL}`,
+      model: channelData.dallModel,
       prompt: message,
-      size: `${process.env.OPENAI_IMAGES_SIZE}` as
-        | "256x256"
-        | "512x512"
-        | "1024x1024"
-        | "1792x1024"
-        | "1024x1792"
-        | null
-        | undefined,
-      quality: "standard",
+      size: channelData.dallSize,
+      quality: channelData.dallQuality,
       n: 1,
     })
 

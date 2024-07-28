@@ -90,6 +90,10 @@ const eventHandler = async (
       systemContent:
         "你是剛初始化的機器人，名為Vivy的機器人，你尚未設定任何任務目標",
       image: true,
+      chatModel: "gpt-4o-mini",
+      dallModel: "dall-e-2",
+      dallSize: "512x512",
+      dallQuality: "standard",
     }
     await setDocument("linebot", channelId, config)
     return
