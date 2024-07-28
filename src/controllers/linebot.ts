@@ -152,9 +152,16 @@ const eventHandler = async (
           event.replyToken,
           JSON.stringify({
             channelId: channelData.channelId,
-            mod: channelData.mod,
-            voice: channelData.voice,
-            systemContent: channelData.systemContent,
+            關鍵字: channelData.name,
+            狀態: channelData.mod,
+            語音: channelData.voice,
+            人格: `${channelData.systemContent.replace(/<[^>]*>/g, "").slice(0, 20)}... `,
+            記憶: channelData.memory,
+            AI模式: channelData.chatModel,
+            圖片生成: channelData.image,
+            生成模式: channelData.dallModel,
+            生成細緻: channelData.dallQuality,
+            生成尺寸: channelData.dallSize,
           })
         )
       }

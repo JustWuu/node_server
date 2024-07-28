@@ -8,6 +8,7 @@ export interface ChannelData {
   image: boolean
   chatModel: string
   dallModel: "dall-e-2" | "dall-e-3"
+  // e-3，最小1024
   dallSize:
     | "256x256"
     | "512x512"
