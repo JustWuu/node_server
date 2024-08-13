@@ -34,7 +34,29 @@ export async function chatGpt(
   try {
     const chatCompletion = await openai.chat.completions.create({
       model: channelData.chatModel,
-      response_format: { type: "json_object" },
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "schema",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              type: {
+                type: "string",
+                description: "面對該提問的回覆，最好的呈現方式。",
+                enum: ["text", "audio", "image"],
+              },
+              message: {
+                type: "string",
+                description: "回覆的內容。",
+              },
+            },
+            required: ["type", "message"],
+            additionalProperties: false,
+          },
+        },
+      },
       messages: [
         {
           role: "system",

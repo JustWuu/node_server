@@ -38,7 +38,7 @@
     "firebase": "^10.12.2",
     "microsoft-cognitiveservices-speech-sdk": "^1.36.0",
     "moment-timezone": "^0.5.45",
-    "openai": "^4.47.3",
+    "openai": "^4.55.5",
     "stream": "^0.0.2"
   }
 }
