@@ -12,25 +12,42 @@ const openai = new OpenAI({
 
 export async function chatGpt(
   channelData: ChannelData,
-  message: string
+  message: string,
+  mode: "callName" | "randomReply" = "callName"
 ): Promise<ReplyMessage> {
   const time = date()
 
-  const channelMessages = await getLinebotMessageCollection(
-    `linebot/${channelData.channelId}/messages`,
-    channelData.memory
-  )
   const messages: any[] = []
-  channelMessages.forEach((doc) => {
-    messages.unshift({
-      role: "assistant",
-      content: doc.reply,
+
+  // 判斷當前是隨機回復還是呼叫回復
+  if (mode === "callName") {
+    const channelMessages = await getLinebotMessageCollection(
+      `linebot/${channelData.channelId}/messages`,
+      channelData.memory
+    )
+    channelMessages.forEach((doc) => {
+      messages.unshift({
+        role: "assistant",
+        content: doc.reply,
+      })
+      messages.unshift({
+        role: "user",
+        content: doc.message,
+      })
     })
-    messages.unshift({
-      role: "user",
-      content: doc.message,
+  } else if (mode === "randomReply") {
+    const channelMessages = await getLinebotMessageCollection(
+      `linebot/${channelData.channelId}/history`,
+      channelData.memory
+    )
+    channelMessages.forEach((doc) => {
+      messages.unshift({
+        role: "user",
+        content: doc.message,
+      })
     })
-  })
+  }
+
   try {
     const chatCompletion = await openai.chat.completions.create({
       model: channelData.chatModel,

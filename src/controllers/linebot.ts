@@ -9,8 +9,12 @@ import {
   setDocument,
   getDocument,
   updateDocument,
+  addDocument,
 } from "@/utils/useFirebase.js"
 import { chatGpt, dallE } from "@/utils/useOpenai.js"
+import { time as getTime } from "@/utils/useTime.js"
+import { generateRandomNumber } from "@/utils/useRandom.js"
+import { getRandomValues } from "crypto"
 
 const getDisplayName = async (channelId: string, source: any) => {
   // set channelAccessToken
@@ -94,6 +98,7 @@ const eventHandler = async (
       dallModel: "dall-e-2",
       dallSize: "512x512",
       dallQuality: "standard",
+      randomReply: 5,
     }
     await setDocument("linebot", channelId, config)
     return
@@ -151,17 +156,17 @@ const eventHandler = async (
           channelData,
           event.replyToken,
           JSON.stringify({
-            channelId: channelData.channelId,
-            關鍵字: channelData.name,
-            狀態: channelData.mod,
-            語音: channelData.voice,
-            人格: `${channelData.systemContent.replace(/<[^>]*>/g, "").slice(0, 20)}... `,
-            記憶: channelData.memory,
-            AI模式: channelData.chatModel,
-            圖片生成: channelData.image,
-            生成模式: channelData.dallModel,
-            生成細緻: channelData.dallQuality,
-            生成尺寸: channelData.dallSize,
+            channelId: `${channelData.channelId}\n`,
+            關鍵字: `${channelData.name}\n`,
+            狀態: `${channelData.mod}\n`,
+            語音: `${channelData.voice}\n`,
+            人格: `${channelData.systemContent.replace(/<[^>]*>/g, "").slice(0, 20)}...\n`,
+            記憶: `${channelData.memory}\n`,
+            AI模式: `${channelData.chatModel}\n`,
+            圖片生成: `${channelData.image}\n`,
+            生成模式: `${channelData.dallModel}\n`,
+            生成細緻: `${channelData.dallQuality}\n`,
+            生成尺寸: `${channelData.dallSize}`,
           })
         )
       }
@@ -180,12 +185,27 @@ const eventHandler = async (
     return reply(channelData, event.replyToken, `[System Set] End, Now [Debug]`)
   }
 
-  // if Debug mod to end
-  if (
-    event.message.text.indexOf(channelData.name) < 0 ||
-    channelData.mod == "[Debug]"
-  ) {
+  await addDocument(`linebot/${channelData.channelId}/history`, {
+    message: event.message.text,
+    createdAt: getTime(),
+  })
+
+  // if not call name and not randomReply or Debug mod to end
+  const callName = event.message.text.indexOf(channelData.name) >= 0
+  const randomReply = channelData.randomReply <= 0
+  if ((!callName && !randomReply) || channelData.mod == "[Debug]") {
+    if (!callName && !randomReply) {
+      await updateDocument("linebot", channelId, {
+        randomReply: (channelData.randomReply -= 1),
+      })
+    }
     return
+  }
+
+  if (!callName && randomReply) {
+    await updateDocument("linebot", channelId, {
+      randomReply: generateRandomNumber(1, 5),
+    })
   }
 
   // get displayName
@@ -194,7 +214,8 @@ const eventHandler = async (
   // start chat
   const chatCompletion = await chatGpt(
     channelData,
-    `${displayName !== "" ? `我是${displayName}，` : ""}${event.message.text}`
+    `${displayName !== "" ? `我是${displayName}，` : ""}${event.message.text}`,
+    !callName && randomReply ? "randomReply" : "callName"
   )
 
   // start reply
