@@ -156,17 +156,17 @@ const eventHandler = async (
           channelData,
           event.replyToken,
           JSON.stringify({
-            channelId: `${channelData.channelId}\n`,
-            關鍵字: `${channelData.name}\n`,
-            狀態: `${channelData.mod}\n`,
-            語音: `${channelData.voice}\n`,
-            人格: `${channelData.systemContent.replace(/<[^>]*>/g, "").slice(0, 20)}...\n`,
-            記憶: `${channelData.memory}\n`,
-            AI模式: `${channelData.chatModel}\n`,
-            圖片生成: `${channelData.image}\n`,
-            生成模式: `${channelData.dallModel}\n`,
-            生成細緻: `${channelData.dallQuality}\n`,
-            生成尺寸: `${channelData.dallSize}`,
+            channelId: channelData.channelId,
+            關鍵字: channelData.name,
+            狀態: channelData.mod,
+            語音: channelData.voice,
+            人格: `${channelData.systemContent.replace(/<[^>]*>/g, "").slice(0, 20)}...`,
+            記憶: channelData.memory,
+            AI模式: channelData.chatModel,
+            圖片生成: channelData.image,
+            生成模式: channelData.dallModel,
+            生成細緻: channelData.dallQuality,
+            生成尺寸: channelData.dallSize,
           })
         )
       }
