@@ -51,8 +51,14 @@ export async function chatGpt(
                 type: "string",
                 description: "回覆的內容。",
               },
+              severity: {
+                type: "string",
+                description:
+                  "該提問的嚴重程度，success:一般問答無需特別注意、help:無法完全解答或提問中帶有煩躁不滿，需人工處理、warn:該問答中含有個人隱私或稍微超出範圍，需注意、danger:問答內容嚴重超出範圍，需特別注意",
+                enum: ["success", "help", "warn", "danger"],
+              },
             },
-            required: ["type", "message"],
+            required: ["type", "message", "severity"],
             additionalProperties: false,
           },
         },
