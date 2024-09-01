@@ -83,7 +83,7 @@ export async function chatGpt(
       messages: [
         {
           role: "system",
-          content: `現在時間${time}，${channelData.systemContent}`,
+          content: `${mode === "randomReply" ? "沒有任何人詢問你，本次你是進行插話" : ""}現在時間${time}，${channelData.systemContent}`,
         },
         ...messages,
         { role: "user", content: message },
