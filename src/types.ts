@@ -19,6 +19,8 @@ export interface ChannelData {
     | undefined
   dallQuality: "standard" | "hd"
   randomReply: number
+  randomReplyMin: number
+  randomReplyMax: number
 }
 
 export interface ReplyMessage {

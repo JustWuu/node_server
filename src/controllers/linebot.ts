@@ -99,6 +99,8 @@ const eventHandler = async (
       dallSize: "512x512",
       dallQuality: "standard",
       randomReply: 5,
+      randomReplyMin: 0,
+      randomReplyMax: 10,
     }
     await setDocument("linebot", channelId, config)
     return
@@ -204,7 +206,10 @@ const eventHandler = async (
 
   if (!callName && randomReply) {
     await updateDocument("linebot", channelId, {
-      randomReply: generateRandomNumber(1, 5),
+      randomReply: generateRandomNumber(
+        channelData.randomReplyMin,
+        channelData.randomReplyMax
+      ),
     })
   }
 
