@@ -213,6 +213,9 @@ const eventHandler = async (
     })
   }
 
+  // 跳過胖子
+  if (event.source!.userId == "U2d6c7cbcd3e3d089cd9295d5923602bc") return
+
   // get displayName
   const displayName = await getDisplayName(channelId, event.source)
 
