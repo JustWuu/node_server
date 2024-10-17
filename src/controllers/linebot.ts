@@ -25,6 +25,7 @@ const getDisplayName = async (channelId: string, source: any) => {
 
   try {
     const profile = await client.getProfile(source.userId)
+    console.log("source.userId", source.userId)
     return profile.displayName
   } catch (error: any) {
     console.log("error:", error)
