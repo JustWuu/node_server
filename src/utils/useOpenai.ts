@@ -35,12 +35,21 @@ export async function chatGpt(
         content: doc.message,
       })
     })
-  } else if (mode === "randomReply") {
-    const channelMessages = await getLinebotMessageCollection(
+    const channelHistory = await getLinebotMessageCollection(
       `linebot/${channelData.channelId}/history`,
       channelData.memory
     )
-    channelMessages.forEach((doc) => {
+    const historyContent = channelHistory.map((doc) => doc.message).join("<br>")
+    messages.unshift({
+      role: "user",
+      content: `近${channelData.memory}筆對話紀錄(一個<br>代表一句的結束)：${historyContent}`,
+    })
+  } else if (mode === "randomReply") {
+    const channelHistory = await getLinebotMessageCollection(
+      `linebot/${channelData.channelId}/history`,
+      channelData.memory
+    )
+    channelHistory.forEach((doc) => {
       messages.unshift({
         role: "user",
         content: doc.message,
