@@ -69,7 +69,7 @@ export async function chatGpt(
       model: channelData.chatModel,
       instructions: `現在時間${time}，${channelData.systemContent}${memoriesText ? `\n\n你的長期記憶（可透過 memories 欄位增刪修）：\n${memoriesText}` : ""}${userAnalysisText}`,
       input,
-      tools: [{ type: "web_search_preview" }],
+      tools: [{ type: "web_search" }],
       text: {
         format: {
           type: "json_schema",
@@ -193,16 +193,20 @@ async function processMemories(
 ): Promise<void> {
   for (const mem of memories) {
     const col = `linebot/${channelId}/memories`
-    switch (mem.action) {
-      case "add":
-        await addDocument(col, { content: mem.content, createdAt: getTime() })
-        break
-      case "update":
-        await updateDocument(col, mem.id, { content: mem.content })
-        break
-      case "delete":
-        await deleteDocument(col, mem.id)
-        break
+    try {
+      switch (mem.action) {
+        case "add":
+          await addDocument(col, { content: mem.content, createdAt: getTime() })
+          break
+        case "update":
+          await updateDocument(col, mem.id, { content: mem.content })
+          break
+        case "delete":
+          await deleteDocument(col, mem.id)
+          break
+      }
+    } catch (error: any) {
+      console.log(`processMemories ${mem.action} error:`, error)
     }
   }
 }
