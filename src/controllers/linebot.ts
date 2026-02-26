@@ -11,10 +11,8 @@ import {
   updateDocument,
   addDocument,
 } from "@/utils/useFirebase.js"
-import { chatGpt, dallE } from "@/utils/useOpenai.js"
+import { chatGpt, dallE, shouldReply } from "@/utils/useOpenai.js"
 import { time as getTime } from "@/utils/useTime.js"
-import { generateRandomNumber } from "@/utils/useRandom.js"
-import { getRandomValues } from "crypto"
 
 const getDisplayName = async (channelId: string, source: any) => {
   // set channelAccessToken
@@ -98,9 +96,6 @@ const eventHandler = async (
       dallModel: "dall-e-2",
       dallSize: "512x512",
       dallQuality: "standard",
-      randomReply: 5,
-      randomReplyMin: 0,
-      randomReplyMax: 10,
     }
     await setDocument("linebot", channelId, config)
     return
@@ -189,37 +184,20 @@ const eventHandler = async (
 
   await addDocument(`linebot/${channelData.channelId}/history`, {
     message: event.message.text,
+    userId: event.source?.userId || "",
     createdAt: getTime(),
   })
 
-  // if not call name and not randomReply or Debug mod to end
+  // 判斷是否需要回復
   const callName = event.message.text.indexOf(channelData.name) >= 0
-  const randomReply = channelData.randomReply <= 0
-  if ((!callName && !randomReply) || channelData.mod == "[Debug]") {
-    if (!callName && !randomReply) {
-      await updateDocument("linebot", channelId, {
-        randomReply: (channelData.randomReply -= 1),
-      })
-    }
-    return
-  }
 
-  if (!callName && randomReply) {
-    await updateDocument("linebot", channelId, {
-      randomReply: generateRandomNumber(
-        channelData.randomReplyMin,
-        channelData.randomReplyMax
-      ),
-    })
-  }
+  if (channelData.mod == "[Debug]") return
 
-  // 跳過胖子
-  if (
-    !callName &&
-    randomReply &&
-    event.source!.userId == "U2d6c7cbcd3e3d089cd9295d5923602bc"
-  )
-    return
+  if (!callName) {
+    // 用 nano 判斷是否適合插話
+    const shouldInterject = await shouldReply(channelData)
+    if (!shouldInterject) return
+  }
 
   // get displayName
   const displayName = await getDisplayName(channelId, event.source)
@@ -228,8 +206,16 @@ const eventHandler = async (
   const chatCompletion = await chatGpt(
     channelData,
     `${displayName !== "" ? `我是${displayName}，` : ""}${event.message.text}`,
-    !callName && randomReply ? "randomReply" : "callName"
+    event.source?.userId || "",
+    displayName
   )
+
+  // 記錄自己的回覆到 history
+  await addDocument(`linebot/${channelData.channelId}/history`, {
+    message: `[你(${channelData.name})的回覆] ${chatCompletion.message}`,
+    userId: "ai",
+    createdAt: getTime(),
+  })
 
   // start reply
   if (chatCompletion.type == "text") {

@@ -18,12 +18,18 @@ export interface ChannelData {
     | null
     | undefined
   dallQuality: "standard" | "hd"
-  randomReply: number
-  randomReplyMin: number
-  randomReplyMax: number
+}
+
+export interface MemoryAction {
+  action: "add" | "update" | "delete"
+  id: string
+  content: string
 }
 
 export interface ReplyMessage {
   type: "text" | "audio" | "image"
   message: string
+  severity?: "success" | "help" | "warn" | "danger"
+  memories?: MemoryAction[]
+  userAnalysis?: string
 }

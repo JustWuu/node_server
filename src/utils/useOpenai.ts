@@ -1,8 +1,13 @@
 import OpenAI from "openai"
-import { ChannelData, ReplyMessage } from "@/types.js"
+import { ChannelData, MemoryAction, ReplyMessage } from "@/types.js"
 import {
+  getCollection,
+  getDocument,
+  setDocument,
   getLinebotMessageCollection,
   addDocument,
+  updateDocument,
+  deleteDocument,
 } from "@/utils/useFirebase.js"
 import { time as getTime, date } from "@/utils/useTime.js"
 
@@ -13,56 +18,61 @@ const openai = new OpenAI({
 export async function chatGpt(
   channelData: ChannelData,
   message: string,
-  mode: "callName" | "randomReply" = "callName"
+  userId: string = "",
+  displayName: string = ""
 ): Promise<ReplyMessage> {
   const time = date()
+  const memoriesText = await getMemories(channelData.channelId)
 
-  const messages: any[] = []
-
-  // 判斷當前是隨機回復還是呼叫回復
-  if (mode === "callName") {
-    const channelMessages = await getLinebotMessageCollection(
-      `linebot/${channelData.channelId}/messages`,
-      channelData.memory
+  // 載入用戶資料
+  let userAnalysisText = ""
+  if (userId) {
+    const userData = await getDocument(
+      `linebot/${channelData.channelId}/users`,
+      userId
     )
-    channelMessages.forEach((doc) => {
-      messages.unshift({
-        role: "assistant",
-        content: doc.reply,
-      })
-      messages.unshift({
-        role: "user",
-        content: doc.message,
-      })
-    })
-    const channelHistory = await getLinebotMessageCollection(
-      `linebot/${channelData.channelId}/history`,
-      channelData.memory
-    )
-    const historyContent = channelHistory.map((doc) => doc.message).join("<br>")
-    messages.unshift({
-      role: "user",
-      content: `近${channelData.memory}筆對話紀錄(一個<br>代表一句的結束)：${historyContent}`,
-    })
-  } else if (mode === "randomReply") {
-    const channelHistory = await getLinebotMessageCollection(
-      `linebot/${channelData.channelId}/history`,
-      channelData.memory
-    )
-    channelHistory.forEach((doc) => {
-      messages.unshift({
-        role: "user",
-        content: doc.message,
-      })
-    })
+    if (userData?.analysis) {
+      userAnalysisText = `\n\n你對當前用戶「${displayName || userId}」的分析：${userData.analysis}`
+    }
   }
 
+  const input: Array<{ role: "user" | "assistant"; content: string }> = []
+
+  const channelMessages = await getLinebotMessageCollection(
+    `linebot/${channelData.channelId}/messages`,
+    channelData.memory
+  )
+  channelMessages.forEach((doc) => {
+    input.unshift({
+      role: "assistant",
+      content: doc.reply,
+    })
+    input.unshift({
+      role: "user",
+      content: doc.message,
+    })
+  })
+  const channelHistory = await getLinebotMessageCollection(
+    `linebot/${channelData.channelId}/history`,
+    channelData.memory
+  )
+  const historyContent = channelHistory.map((doc) => doc.message).join("<br>")
+  input.unshift({
+    role: "user",
+    content: `近${channelData.memory}筆對話紀錄(一個<br>代表一句的結束)：${historyContent}`,
+  })
+
+  input.push({ role: "user", content: message })
+
   try {
-    const chatCompletion = await openai.chat.completions.create({
+    const response = await openai.responses.create({
       model: channelData.chatModel,
-      response_format: {
-        type: "json_schema",
-        json_schema: {
+      instructions: `現在時間${time}，${channelData.systemContent}${memoriesText ? `\n\n你的長期記憶（可透過 memories 欄位增刪修）：\n${memoriesText}` : ""}${userAnalysisText}`,
+      input,
+      tools: [{ type: "web_search_preview" }],
+      text: {
+        format: {
+          type: "json_schema",
           name: "schema",
           strict: true,
           schema: {
@@ -83,27 +93,71 @@ export async function chatGpt(
                   "該提問的嚴重程度，success:一般問答無需特別注意、help:無法完全解答或提問中帶有煩躁不滿，需人工處理、warn:該問答中含有個人隱私或稍微超出範圍，需注意、danger:問答內容嚴重超出範圍，需特別注意",
                 enum: ["success", "help", "warn", "danger"],
               },
+              memories: {
+                type: "array",
+                description:
+                  "需要記住/修改/刪除的長期記憶事項，沒有則回空陣列",
+                items: {
+                  type: "object",
+                  properties: {
+                    action: {
+                      type: "string",
+                      enum: ["add", "update", "delete"],
+                    },
+                    id: {
+                      type: "string",
+                      description:
+                        "update/delete 時帶入記憶ID，add 時填空字串",
+                    },
+                    content: {
+                      type: "string",
+                      description:
+                        "記憶內容，delete 時填空字串",
+                    },
+                  },
+                  required: ["action", "id", "content"],
+                  additionalProperties: false,
+                },
+              },
+              userAnalysis: {
+                type: "string",
+                description:
+                  "根據本次對話更新對當前用戶的分析（個性、偏好、互動模式等），無需更新則填空字串",
+              },
             },
-            required: ["type", "message", "severity"],
+            required: ["type", "message", "severity", "memories", "userAnalysis"],
             additionalProperties: false,
           },
         },
       },
-      messages: [
-        {
-          role: "system",
-          content: `${mode === "randomReply" ? "沒有任何人詢問你，本次你是進行插話" : ""}現在時間${time}，${channelData.systemContent}`,
-        },
-        ...messages,
-        { role: "user", content: message },
-      ],
     })
 
-    const replyMessage =
-      chatCompletion.choices[0]?.message.content?.trim() || "undefined"
-    const replyMessageObject: ReplyMessage =
-      JSON.parse(chatCompletion.choices[0]?.message.content?.trim()!) ||
-      "undefined"
+    const replyMessage = response.output_text?.trim() || "undefined"
+    const replyMessageObject: ReplyMessage = JSON.parse(replyMessage)
+
+    // 處理記憶操作
+    if (replyMessageObject.memories && replyMessageObject.memories.length > 0) {
+      await processMemories(channelData.channelId, replyMessageObject.memories)
+    }
+
+    // 更新用戶分析
+    if (userId && replyMessageObject.userAnalysis) {
+      const userCol = `linebot/${channelData.channelId}/users`
+      const userData = await getDocument(userCol, userId)
+      if (userData) {
+        await updateDocument(userCol, userId, {
+          displayName: displayName || userData.displayName,
+          analysis: replyMessageObject.userAnalysis,
+        })
+      } else {
+        await setDocument(userCol, userId, {
+          displayName,
+          userId,
+          analysis: replyMessageObject.userAnalysis,
+          createdAt: getTime(),
+        })
+      }
+    }
 
     await addDocument(`linebot/${channelData.channelId}/messages`, {
       message: message,
@@ -115,6 +169,83 @@ export async function chatGpt(
   } catch (error: any) {
     console.log("error:", error)
     return { type: "text", message: "undefined" }
+  }
+}
+
+async function getMemories(channelId: string): Promise<string> {
+  try {
+    const memories = await getCollection(`linebot/${channelId}/memories`)
+    if (memories.length === 0) return ""
+    return memories
+      .map((doc: any) => `[id:${doc.id}] ${doc.content}`)
+      .join("\n")
+  } catch {
+    return ""
+  }
+}
+
+async function processMemories(
+  channelId: string,
+  memories: MemoryAction[]
+): Promise<void> {
+  for (const mem of memories) {
+    const col = `linebot/${channelId}/memories`
+    switch (mem.action) {
+      case "add":
+        await addDocument(col, { content: mem.content, createdAt: getTime() })
+        break
+      case "update":
+        await updateDocument(col, mem.id, { content: mem.content })
+        break
+      case "delete":
+        await deleteDocument(col, mem.id)
+        break
+    }
+  }
+}
+
+export async function shouldReply(channelData: ChannelData): Promise<boolean> {
+  try {
+    const channelHistory = await getLinebotMessageCollection(
+      `linebot/${channelData.channelId}/history`,
+      channelData.memory
+    )
+    const historyContent = channelHistory.map((doc) => doc.message).join("\n")
+
+    const response = await openai.responses.create({
+      model: "gpt-4.1-nano",
+      instructions: `你是「${channelData.name}」，${channelData.systemContent}\n判斷目前對話是否適合你插話。適合插話的情境：有人問問題沒人回答、聊到你擅長的話題、氣氛冷場、有人需要幫助。不適合插話：私人對話、已經有人回答了、話題與你無關。`,
+      input: [
+        {
+          role: "user",
+          content: `以下是近期對話紀錄：\n${historyContent}\n\n你現在適合插話嗎？`,
+        },
+      ],
+      text: {
+        format: {
+          type: "json_schema",
+          name: "should_reply",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              reply: {
+                type: "boolean",
+                description: "是否適合插話",
+              },
+            },
+            required: ["reply"],
+            additionalProperties: false,
+          },
+        },
+      },
+    })
+
+    const result = JSON.parse(response.output_text?.trim() || '{"reply":false}')
+    return result.reply
+  } catch (error: any) {
+    console.log("shouldReply error:", error)
+    return false
   }
 }
 
@@ -131,7 +262,7 @@ export async function dallE(
       n: 1,
     })
 
-    const image_url = response.data[0]!.url
+    const image_url = response.data?.[0]?.url
 
     await addDocument(`linebot/${channelData.channelId}/images`, {
       message: message,
