@@ -192,12 +192,6 @@ const eventHandler = async (
     } else {
       aiReplied = await shouldReply(channelData, event.message.text)
     }
-  } else {
-    await addDocument(`linebot/${channelData.channelId}/history`, {
-      message: event.message.text,
-      userId: event.source?.userId || "",
-      createdAt: getTime(),
-    })
   }
 
   // 記錄用戶訊息到 history
