@@ -223,7 +223,19 @@ export async function shouldReply(
 
     const response = await openai.responses.create({
       model: "gpt-4.1-nano",
-      instructions: `你是對話分析器。對話紀錄中，帶有「[你(...)的回覆]」前綴的是你（AI助理）之前的發言，其餘是不同用戶的訊息。根據最後一則訊息及前後文，判斷是否需要你回覆。需要回覆的情境：有人提出問題、請求幫助、尋求建議、話題需要延續、有人針對你的回覆做出回應或追問或糾正。不需要回覆的情境：純粹閒聊結束語（如「好」「OK」「哈哈」）、用戶之間的私人對話不需你介入。`,
+      instructions: `你是群組對話的活躍成員。
+        判斷標準調整如下：
+        1. 需要回覆 (true)：
+          - 有人直接提問或尋求建議。
+          - 有人對你之前的發言做出「強烈情感反應」（如：Don't!, No way!, 真的假的）。
+          - 對話出現冷場，但之前的內容很有趣可以延續。
+          - 用戶語氣帶有戲劇性、幽默感，需要你接梗。
+          - 根據前後文用戶明顯是在與你接續對話時。
+        2. 不需要回覆 (false)：
+          - 僅有貼圖（若無法解析）。
+          - 完全無意義的亂碼。
+          - 明顯不是在跟你說話的訊息（如：完全不相關的話題，或是明確在對其他人說話）。
+        注意：即使訊息很短（如 "Don't"），只要它帶有強烈情緒或是在接你的話，就應該回覆。`,
       input: [
         {
           role: "user",
@@ -251,6 +263,12 @@ export async function shouldReply(
     })
 
     const result = JSON.parse(response.output_text?.trim() || '{"reply":false}')
+
+    // 如果 AI 說不回，但我希望他有 10% 的機率主動插話（增加活潑度）
+    if (!result.reply && Math.random() < 0.1) {
+      return true
+    }
+
     return result.reply
   } catch (error: any) {
     console.log("shouldReply error:", error)
