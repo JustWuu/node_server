@@ -95,8 +95,7 @@ export async function chatGpt(
               },
               memories: {
                 type: "array",
-                description:
-                  "需要記住/修改/刪除的長期記憶事項，沒有則回空陣列",
+                description: "需要記住/修改/刪除的長期記憶事項，沒有則回空陣列",
                 items: {
                   type: "object",
                   properties: {
@@ -106,13 +105,11 @@ export async function chatGpt(
                     },
                     id: {
                       type: "string",
-                      description:
-                        "update/delete 時帶入記憶ID，add 時填空字串",
+                      description: "update/delete 時帶入記憶ID，add 時填空字串",
                     },
                     content: {
                       type: "string",
-                      description:
-                        "記憶內容，delete 時填空字串",
+                      description: "記憶內容，delete 時填空字串",
                     },
                   },
                   required: ["action", "id", "content"],
@@ -125,7 +122,13 @@ export async function chatGpt(
                   "根據本次對話更新對當前用戶的分析（個性、偏好、互動模式等），無需更新則填空字串",
               },
             },
-            required: ["type", "message", "severity", "memories", "userAnalysis"],
+            required: [
+              "type",
+              "message",
+              "severity",
+              "memories",
+              "userAnalysis",
+            ],
             additionalProperties: false,
           },
         },
@@ -204,21 +207,27 @@ async function processMemories(
   }
 }
 
-export async function shouldReply(channelData: ChannelData): Promise<boolean> {
+export async function shouldReply(
+  channelData: ChannelData,
+  currentMessage: string = ""
+): Promise<boolean> {
   try {
     const channelHistory = await getLinebotMessageCollection(
       `linebot/${channelData.channelId}/history`,
       channelData.memory
     )
     const historyContent = channelHistory.map((doc) => doc.message).join("\n")
+    const fullContext = currentMessage
+      ? `${historyContent}\n${currentMessage}`
+      : historyContent
 
     const response = await openai.responses.create({
       model: "gpt-4.1-nano",
-      instructions: `你是對話分析器。根據最後一則訊息及前後文，判斷這段對話是否需要有人回覆。需要回覆的情境：有人提出問題、請求幫助、尋求建議、話題需要延續。不需要回覆的情境：純粹閒聊結束語（如「好」「OK」「哈哈」）、私人對話不需外人介入、已經有人回答了。`,
+      instructions: `你是對話分析器。對話紀錄中，帶有「[你(...)的回覆]」前綴的是你（AI助理）之前的發言，其餘是不同用戶的訊息。根據最後一則訊息及前後文，判斷是否需要你回覆。需要回覆的情境：有人提出問題、請求幫助、尋求建議、話題需要延續、有人針對你的回覆做出回應或追問或糾正。不需要回覆的情境：純粹閒聊結束語（如「好」「OK」「哈哈」）、用戶之間的私人對話不需你介入。`,
       input: [
         {
           role: "user",
-          content: `以下是近期對話紀錄：\n${historyContent}\n\n最後一則訊息是否需要有人回覆？`,
+          content: `以下是近期對話紀錄：\n${fullContext}\n\n最後一則訊息是否需要有人回覆？`,
         },
       ],
       text: {
@@ -231,7 +240,7 @@ export async function shouldReply(channelData: ChannelData): Promise<boolean> {
             properties: {
               reply: {
                 type: "boolean",
-                description: "是否適合插話",
+                description: "是否需要回覆，true 代表需要，false 代表不需要",
               },
             },
             required: ["reply"],

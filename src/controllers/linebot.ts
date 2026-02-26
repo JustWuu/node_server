@@ -182,22 +182,33 @@ const eventHandler = async (
     return reply(channelData, event.replyToken, `[System Set] End, Now [Debug]`)
   }
 
+  // 判斷是否需要回復
+  const callName = event.message.text.indexOf(channelData.name) >= 0
+  let aiReplied = false
+
+  if (channelData.mod !== "[Debug]") {
+    if (callName) {
+      aiReplied = true
+    } else {
+      aiReplied = await shouldReply(channelData, event.message.text)
+    }
+  } else {
+    await addDocument(`linebot/${channelData.channelId}/history`, {
+      message: event.message.text,
+      userId: event.source?.userId || "",
+      createdAt: getTime(),
+    })
+  }
+
+  // 記錄用戶訊息到 history
   await addDocument(`linebot/${channelData.channelId}/history`, {
     message: event.message.text,
     userId: event.source?.userId || "",
+    aiReplied,
     createdAt: getTime(),
   })
 
-  // 判斷是否需要回復
-  const callName = event.message.text.indexOf(channelData.name) >= 0
-
-  if (channelData.mod == "[Debug]") return
-
-  if (!callName) {
-    // 用 nano 判斷是否適合插話
-    const shouldInterject = await shouldReply(channelData)
-    if (!shouldInterject) return
-  }
+  if (!aiReplied) return
 
   // get displayName
   const displayName = await getDisplayName(channelId, event.source)
