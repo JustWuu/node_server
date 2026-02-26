@@ -214,11 +214,11 @@ export async function shouldReply(channelData: ChannelData): Promise<boolean> {
 
     const response = await openai.responses.create({
       model: "gpt-4.1-nano",
-      instructions: `你是「${channelData.name}」，${channelData.systemContent}\n判斷目前對話是否適合你插話。適合插話的情境：有人問問題沒人回答、聊到你擅長的話題、氣氛冷場、有人需要幫助。不適合插話：私人對話、已經有人回答了、話題與你無關。`,
+      instructions: `你是對話分析器。根據最後一則訊息及前後文，判斷這段對話是否需要有人回覆。需要回覆的情境：有人提出問題、請求幫助、尋求建議、話題需要延續。不需要回覆的情境：純粹閒聊結束語（如「好」「OK」「哈哈」）、私人對話不需外人介入、已經有人回答了。`,
       input: [
         {
           role: "user",
-          content: `以下是近期對話紀錄：\n${historyContent}\n\n你現在適合插話嗎？`,
+          content: `以下是近期對話紀錄：\n${historyContent}\n\n最後一則訊息是否需要有人回覆？`,
         },
       ],
       text: {
