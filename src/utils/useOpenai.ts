@@ -67,7 +67,7 @@ export async function chatGpt(
   try {
     const response = await openai.responses.create({
       model: channelData.chatModel,
-      instructions: `現在時間${time}，${channelData.systemContent}${memoriesText ? `\n\n你的長期記憶（可透過 memories 欄位增刪修）：\n${memoriesText}` : ""}${userAnalysisText}\n\n請以純文字回覆，避免使用 Markdown 語法。若需提供網址，僅保留完整的 http(s) 連結，並以換行分隔每筆資訊。`,
+      instructions: `現在時間${time}，${channelData.systemContent}${memoriesText ? `\n\n你的長期記憶（可透過 memories 欄位增刪修）：\n${memoriesText}` : ""}${userAnalysisText}\n\n請以純文字回覆，禁止使用 Markdown 語法（例如 [文字](網址)）。若需提供網址，請直接呈現完整的 http(s) 連結，禁止在網址前後加上括號，並以換行或空格與文字分隔。`,
       input,
       tools: [{ type: "web_search" }],
       text: {
@@ -138,14 +138,22 @@ export async function chatGpt(
     const replyMessage = response.output_text?.trim() || "undefined"
     const replyMessageObject: ReplyMessage = JSON.parse(replyMessage)
 
-    // Helper to sanitize markdown links for LINE-friendly plain text
+    // Helper to sanitize markdown links and messy URLs for LINE-friendly plain text
     const sanitizeLineMessage = (text: string): string => {
-      // Replace markdown links [text](url) with just the URL
-      return text.replace(/\[.*?\]\((https?:\/\/[^\s)]+)\)/g, '$1');
-    };
+      let cleaned = text
+      // 1. Replace markdown links [text](url) with just the URL
+      cleaned = cleaned.replace(/\[.*?\]\((https?:\/\/[^\s)]+)\)/g, "$1")
+      // 2. Remove parentheses around URLs: (https://...)
+      cleaned = cleaned.replace(/\((https?:\/\/[^\s)]+)\)/g, "$1")
+      // 3. Remove utm tracking parameters to keep it clean
+      cleaned = cleaned.replace(/(\?|&)?utm_[^&\s]+/g, "")
+      // 4. Remove trailing ? or & if any after stripping utm
+      cleaned = cleaned.replace(/(\?|&)$/g, "")
+      return cleaned
+    }
 
     // Clean the message content
-    replyMessageObject.message = sanitizeLineMessage(replyMessageObject.message);
+    replyMessageObject.message = sanitizeLineMessage(replyMessageObject.message)
 
     // 處理記憶操作
     if (replyMessageObject.memories && replyMessageObject.memories.length > 0) {
