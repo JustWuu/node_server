@@ -67,7 +67,7 @@ export async function chatGpt(
   try {
     const response = await openai.responses.create({
       model: channelData.chatModel,
-      instructions: `現在時間${time}，${channelData.systemContent}${memoriesText ? `\n\n你的長期記憶（可透過 memories 欄位增刪修）：\n${memoriesText}` : ""}${userAnalysisText}`,
+      instructions: `現在時間${time}，${channelData.systemContent}${memoriesText ? `\n\n你的長期記憶（可透過 memories 欄位增刪修）：\n${memoriesText}` : ""}${userAnalysisText}\n\n請以純文字回覆，避免使用 Markdown 語法。若需提供網址，僅保留完整的 http(s) 連結，並以換行分隔每筆資訊。`,
       input,
       tools: [{ type: "web_search" }],
       text: {
@@ -137,6 +137,15 @@ export async function chatGpt(
 
     const replyMessage = response.output_text?.trim() || "undefined"
     const replyMessageObject: ReplyMessage = JSON.parse(replyMessage)
+
+    // Helper to sanitize markdown links for LINE-friendly plain text
+    const sanitizeLineMessage = (text: string): string => {
+      // Replace markdown links [text](url) with just the URL
+      return text.replace(/\[.*?\]\((https?:\/\/[^\s)]+)\)/g, '$1');
+    };
+
+    // Clean the message content
+    replyMessageObject.message = sanitizeLineMessage(replyMessageObject.message);
 
     // 處理記憶操作
     if (replyMessageObject.memories && replyMessageObject.memories.length > 0) {
