@@ -67,7 +67,7 @@ export async function chatGpt(
   try {
     const response = await openai.responses.create({
       model: channelData.chatModel,
-      instructions: `現在時間${time}，${channelData.systemContent}${memoriesText ? `\n\n你的長期記憶（可透過 memories 欄位增刪修）：\n${memoriesText}` : ""}${userAnalysisText}\n\n請以純文字回覆，禁止使用 Markdown 語法（例如 [文字](網址)）。若需提供網址，請直接呈現完整的 http(s) 連結，禁止在網址前後加上括號，並以換行或空格與文字分隔。`,
+      instructions: `現在時間${time}，${channelData.systemContent}${memoriesText ? `\n\n你的長期記憶（可透過 memories 欄位增刪修）：\n${memoriesText}\n請主動評估並刪除（action: "delete"）過時、無效或不再重要的記憶，確保記憶庫保持精簡與準確。` : ""}${userAnalysisText}\n\n請以純文字回覆，禁止使用 Markdown 語法（例如 [文字](網址)）。若需提供網址，請直接呈現完整的 http(s) 連結，禁止在網址前後加上括號，並以換行或空格與文字分隔。`,
       input,
       tools: [{ type: "web_search" }],
       text: {
